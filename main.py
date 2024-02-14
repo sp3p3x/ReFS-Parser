@@ -9,17 +9,25 @@ def println(data):
     print(data, end="\n\n")
 
 
+def patMatch(data, patten):
+    matches = patten.finditer(data)
+    positions = []
+    for match in matches:
+        positions.append(match.start())
+
+    return positions
+
+
 def extractMLog(dumpPath):
     print("Reading file...\n")
-    rawData = open(dumpPath, "rb").read()
+
+    with open(dumpPath, "rb") as dumpfile:
+        rawData = dumpfile.read()
 
     println("Extracting MLogs...")
 
     mlogPat = re.compile(rb"MLog")
-    mlogMatches = mlogPat.finditer(rawData)
-    mlogPos = []
-    for match in mlogMatches:
-        mlogPos.append(match.start())
+    mlogPos = patMatch(rawData, mlogPat)
 
     mlogSize = mlogPos[1] - mlogPos[0]
     print(f"MLog matches found at: {[hex(i) for i in mlogPos]}\n")
@@ -56,8 +64,115 @@ def extractMLog(dumpPath):
     cls()
 
 
+def parseMLog(data):
+    cls()
+
+    signature = data[:4]
+    entryID = data[4:8]
+    entySize = data[12:16]
+    entryUUID = data[16:32]
+    control = data[32:36]
+    currentMLLSN = data[40:48]
+    prevMLLSN = data[48:56]
+    entryHeaderSize = data[84:88]
+
+    entryHeader = {}
+
+    keys = [
+        "Signature",
+        "Entry ID",
+        "Enty Size",
+        "Entry UUID",
+        "Control",
+        "Current ML LSN",
+        "Previous ML LSN",
+        "Entry Header Size",
+    ]
+
+    values = [
+        signature,
+        entryID,
+        entySize,
+        entryUUID,
+        control,
+        currentMLLSN,
+        prevMLLSN,
+        entryHeaderSize,
+    ]
+
+    for i in range(len(keys)):
+        entryHeader[keys[i]] = values[i]
+
+    currentMLLSN = data[120:128]
+    checksum = data[128:136]
+    prevMLLSN = data[144:152]
+    dataAreaSize = data[152:156]
+    logRecordHDRSize = data[160:164]
+    logRecordSize = data[164:168]
+    type_unknown = data[168:176]
+
+    logRecordHeader = {}
+
+    keys = [
+        "Current ML LSN",
+        "Checksum",
+        "Previous ML LSN",
+        "Data Area Size",
+        "Log Record HDR Size",
+        "Log Record Size",
+        "Type [unknown]",
+    ]
+
+    vaues = [
+        currentMLLSN,
+        checksum,
+        prevMLLSN,
+        dataAreaSize,
+        logRecordHDRSize,
+        logRecordSize,
+        type_unknown,
+    ]
+
+    for i in range(len(keys)):
+        logRecordHeader[keys[i]] = values[i]
+
+    for i in range(len(entryHeader)):
+        println(f"{list(entryHeader.keys())[i]:<20}:  {list(entryHeader.values())[i]}")
+
+    for i in range(len(logRecordHeader)):
+        println(
+            f"{list(logRecordHeader.keys())[i]:<20}:  {list(logRecordHeader.values())[i]}"
+        )
+
+    input()
+    cls()
+
+
 def parseLogFile(path):
-    pass
+    println("Reading File...")
+
+    with open(path, "rb") as logfile:
+        logFileData = logfile.read()
+
+    mlogPat = re.compile(rb"MLog")
+    mlogPos = patMatch(logFileData, mlogPat)
+
+    mlogSize = mlogPos[1] - mlogPos[0]
+    print(f"MLog matches found at: {[hex(i) for i in mlogPos]}\n")
+    print(f"MLog Size: {mlogSize}\n")
+    print(f"MLog Count: {len(mlogPos)}\n")
+
+    inp = input("View each entry? [y] ").lower()
+
+    if inp == "y":
+        for i in range(len(mlogPos)):
+            if i != len(mlogPos) - 1:
+                parseMLog(logFileData[mlogPos[i] : mlogPos[i + 1]])
+            else:
+                parseMLog(logFileData[mlogPos[i] :])
+    else:
+        cls()
+        return None
 
 
 def cli(dumpPath, logfilePath):
@@ -92,6 +207,6 @@ def main(dumpPath, logfilePath):
 
 
 if __name__ == "__main__":
-    dumpFile = "../Chall-Test/UpdatedFile.001"
-    logFile = "LogFile"
-    main(dumpFile, logFile)
+    dumpFilePath = "../Chall-Test/UpdatedFile.001"
+    logFilePath = "LogFile"
+    main(dumpFilePath, logFilePath)
