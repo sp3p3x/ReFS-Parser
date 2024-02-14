@@ -1,7 +1,20 @@
-import re
+import os, re
 
 
-def extractMLog(rawData):
+def cls():
+    os.system("clear")
+
+
+def println(data):
+    print(data, end="\n\n")
+
+
+def extractMLog(dumpPath):
+    print("Reading file...\n")
+    rawData = open(dumpPath, "rb").read()
+
+    println("Extracting MLogs...")
+
     mlogPat = re.compile(rb"MLog")
     mlogMatches = mlogPat.finditer(rawData)
     mlogPos = []
@@ -40,19 +53,42 @@ def extractMLog(rawData):
         logfile.write(mlogData)
 
     print("MLog data written to LogFile...")
+    cls()
 
 
 def parseLogFile(path):
     pass
 
 
+def cli(dumpPath, logfilePath):
+    while True:
+
+        choice = input(
+            f"""
+        {'ReFS Parser':^30}\n
+        [1]  Extract LogFile
+        [2]  Parse LogFile
+        [3/e] Exit            
+
+        Choice: """
+        )
+
+        if choice == "1":
+            cls()
+            extractMLog(dumpPath)
+        elif choice == "2":
+            cls()
+            parseLogFile(logfilePath)
+        elif choice == "3" or choice.lower() == "e":
+            cls()
+            exit()
+        else:
+            println("Enter valid input!")
+            cls()
+
+
 def main(dumpPath, logfilePath):
-    if input("Extract LogFile? [y] ").lower() == "y":
-        print("Reading file...\n")
-        rawData = open(dumpPath, "rb").read()
-        extractMLog(rawData)
-    else:
-        parseLogFile(logfilePath)
+    cli(dumpPath, logfilePath)
 
 
 if __name__ == "__main__":
