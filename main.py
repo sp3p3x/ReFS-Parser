@@ -69,19 +69,21 @@ def parseMLog(data):
 
     signature = data[:4]
     entryID = data[4:8]
-    entySize = data[12:16]
+    # unknown bytes: 4
+    entrySize = data[12:16]
     entryUUID = data[16:32]
     control = data[32:36]
+    # unknown bytes: 4
     currentMLLSN = data[40:48]
     prevMLLSN = data[48:56]
+    # unknown bytes: 28
     entryHeaderSize = data[84:88]
-
-    entryHeader = {}
+    # unknown bytes: 32
 
     keys = [
         "Signature",
         "Entry ID",
-        "Enty Size",
+        "Entry Size",
         "Entry UUID",
         "Control",
         "Current ML LSN",
@@ -92,7 +94,7 @@ def parseMLog(data):
     values = [
         signature,
         entryID,
-        entySize,
+        entrySize,
         entryUUID,
         control,
         currentMLLSN,
@@ -100,18 +102,20 @@ def parseMLog(data):
         entryHeaderSize,
     ]
 
+    println("Entry Header:")
+
     for i in range(len(keys)):
-        entryHeader[keys[i]] = values[i]
+        println(f"{keys[i]:.<20}:  {values[i]}")
 
     currentMLLSN = data[120:128]
     checksum = data[128:136]
+    # unknown bytes: 8
     prevMLLSN = data[144:152]
     dataAreaSize = data[152:156]
+    # unknown bytes: 4
     logRecordHDRSize = data[160:164]
     logRecordSize = data[164:168]
-    type_unknown = data[168:176]
-
-    logRecordHeader = {}
+    typeValue = data[168:176]
 
     keys = [
         "Current ML LSN",
@@ -120,29 +124,28 @@ def parseMLog(data):
         "Data Area Size",
         "Log Record HDR Size",
         "Log Record Size",
-        "Type [unknown]",
+        "Type",
     ]
 
-    vaues = [
+    values = [
         currentMLLSN,
         checksum,
         prevMLLSN,
         dataAreaSize,
         logRecordHDRSize,
         logRecordSize,
-        type_unknown,
+        typeValue,
     ]
 
+    println("Log Record Header:")
+
     for i in range(len(keys)):
-        logRecordHeader[keys[i]] = values[i]
-
-    for i in range(len(entryHeader)):
-        println(f"{list(entryHeader.keys())[i]:<20}:  {list(entryHeader.values())[i]}")
-
-    for i in range(len(logRecordHeader)):
-        println(
-            f"{list(logRecordHeader.keys())[i]:<20}:  {list(logRecordHeader.values())[i]}"
-        )
+        if keys[i] == "Data Area Size":
+            println(
+                f"{keys[i]:.<20}:  {values[i]} -> {hex(int.from_bytes(values[i],'little'))} -> {int(hex(int.from_bytes(values[i],'little'))[2:],16)}"
+            )
+        else:
+            println(f"{keys[i]:.<20}:  {values[i]}")
 
     input()
     cls()
