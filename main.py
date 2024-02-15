@@ -64,8 +64,7 @@ def extractMLog(dumpPath):
     cls()
 
 
-def parseMLog(data):
-    cls()
+def parseEntryHeader(data):
 
     signature = data[:4]
     entryID = data[4:8]
@@ -102,11 +101,13 @@ def parseMLog(data):
         entryHeaderSize,
     ]
 
-    println("Entry Header:")
+    println(f"{'Entry Header':-^55}")
 
     for i in range(len(keys)):
         println(f"{keys[i]:.<20}:  {values[i]}")
 
+
+def parseLogRecordHeader(data):
     currentMLLSN = data[120:128]
     checksum = data[128:136]
     # unknown bytes: 8
@@ -137,7 +138,7 @@ def parseMLog(data):
         typeValue,
     ]
 
-    println("Log Record Header:")
+    println(f"{'Log Record Header':-^55}")
 
     for i in range(len(keys)):
         if keys[i] == "Data Area Size":
@@ -147,8 +148,61 @@ def parseMLog(data):
         else:
             println(f"{keys[i]:.<20}:  {values[i]}")
 
-    input()
+
+def parseRedoRecord(data):
+    redoRecordSize = data[176:180]
+    opcode = data[180:184]
+    tableKeysCount = data[184:188]
+    tableKeysOffset = data[188:192]
+    valueCount = data[192:196]
+    valueOffset = data[196:200]
+    # unknown bytes: 20
+    recordMark = data[220:224]
+    sequenceNumber = data[224:228]
+    endMark = data[228:232]
+
+    keys = [
+        "Redo Record Size",
+        "Opcode",
+        "Table Keys Count",
+        "Table Keys Offset",
+        "Value Count",
+        "Value Offset",
+        "Record Mark",
+        "Sequence Number",
+        "End Mark",
+    ]
+
+    values = [
+        redoRecordSize,
+        opcode,
+        tableKeysCount,
+        tableKeysOffset,
+        valueCount,
+        valueOffset,
+        recordMark,
+        sequenceNumber,
+        endMark,
+    ]
+
+    println(f"{'Redo Record Header':-^55}")
+
+    for i in range(len(keys)):
+        println(f"{keys[i]:.<20}:  {values[i]}")
+
+
+def parseMLog(data):
     cls()
+
+    parseEntryHeader(data)
+
+    parseLogRecordHeader(data)
+
+    parseRedoRecord(data)
+
+    foo = input("Press [q] to return to menu! ")
+    cls()
+    return foo
 
 
 def parseLogFile(path):
@@ -170,9 +224,11 @@ def parseLogFile(path):
     if inp == "y":
         for i in range(len(mlogPos)):
             if i != len(mlogPos) - 1:
-                parseMLog(logFileData[mlogPos[i] : mlogPos[i + 1]])
+                if parseMLog(logFileData[mlogPos[i] : mlogPos[i + 1]]).lower() == "q":
+                    break
             else:
-                parseMLog(logFileData[mlogPos[i] :])
+                if parseMLog(logFileData[mlogPos[i] :]).lower() == "q":
+                    break
     else:
         cls()
         return None
@@ -186,7 +242,7 @@ def cli(dumpPath, logfilePath):
         {'ReFS Parser':^30}\n
         [1]  Extract LogFile
         [2]  Parse LogFile
-        [3/e] Exit            
+        [3/q] Exit            
 
         Choice: """
         )
@@ -197,7 +253,7 @@ def cli(dumpPath, logfilePath):
         elif choice == "2":
             cls()
             parseLogFile(logfilePath)
-        elif choice == "3" or choice.lower() == "e":
+        elif choice == "3" or choice.lower() == "q":
             cls()
             exit()
         else:
@@ -210,6 +266,7 @@ def main(dumpPath, logfilePath):
 
 
 if __name__ == "__main__":
-    dumpFilePath = "../Chall-Test/UpdatedFile.001"
-    logFilePath = "LogFile"
+    directory = "test"
+    dumpFilePath = os.path.join(directory, "UpdatedFile.001")
+    logFilePath = os.path.join(directory, "LogFile")
     main(dumpFilePath, logFilePath)
