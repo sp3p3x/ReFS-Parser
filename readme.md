@@ -2,4 +2,4 @@
 
 ## Usage
 
-`python3 main.py`
+`python3 main.py {path to logfile/dumpfile}`
