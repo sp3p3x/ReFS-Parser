@@ -1,4 +1,4 @@
-import os, re
+import os, re, sys
 
 
 def cls():
@@ -266,7 +266,9 @@ def main(dumpPath, logfilePath):
 
 
 if __name__ == "__main__":
-    directory = "test"
-    dumpFilePath = os.path.join(directory, "UpdatedFile.001")
-    logFilePath = os.path.join(directory, "LogFile")
-    main(dumpFilePath, logFilePath)
+    if sys.argv[0] != "":
+        dumpFilePath = os.path.join(sys.argv[0])
+        logFilePath = os.path.join(sys.argv[0])
+        main(dumpFilePath, logFilePath)
+    else:
+        print("Usage: python3 main.py {path to logfile/dumpfile}")
